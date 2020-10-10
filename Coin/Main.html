@@ -1,0 +1,217 @@
+<!DOCTYPE HTML>
+<HTML lang="en">
+	<head>
+	<title>"Coin Collector"</title>
+		<script id = "2dVertexShader" type = "notjs">
+		attribute vec4 a_position;
+		attribute vec3 vert_color;
+		varying vec3 fragColor;
+		uniform vec3 transform;
+		uniform vec3 rotation;
+		
+			vec4 place() {
+				vec3 c = cos(rotation);
+				vec3 s = sin(rotation);
+
+				mat4 translateM = mat4(1.0,					0.0,					0.0,					0.0,
+									   					 0.0,					1.0,					0.0,					0.0,
+									   					 0.0,					0.0,					1.0,					0.0,
+									   					 transform.x,	transform.y,	transform.z,	1.0);
+
+				mat4 rotateY = mat4(c.y,		0.0,		-1.0*s.y,		0.0,
+														0.0,		1.0,		0.0,				0.0,
+														s.y,		0.0,		c.y,				0.0,
+														0.0,		0.0,		0.0,				1.0);
+
+				mat4 rotateX = mat4(1.0,		0.0,		0.0,				0.0,
+														0.0,		c.x,		-1.0*s.x,		0.0,
+														0.0,		s.x,		c.x,				0.0,
+														0.0,		0.0,		0.0,				1.0);
+
+			  mat4 rotateZ = mat4(c.z,		-1.0*s.z,		0.0,				0.0,
+														s.z,		c.z,		0.0,		0.0,
+														0.0,		0.0,		1.0,				0.0,
+														0.0,		0.0,		0.0,				1.0);
+
+
+				return translateM * rotateZ * rotateY * rotateX * a_position;
+			}	
+			
+		void main() {
+			fragColor = vert_color;
+			gl_Position = place();
+		}
+		</script>
+		<script id = "2dFragmentShader" type = "notjs">
+	
+		precision mediump float;
+		varying vec3 fragColor;
+	
+		void main() {
+			gl_FragColor = vec4(fragColor,1);
+		}
+		</script>
+		<script src = "Shape.js"></script>
+		<script src = "webgl_interface.js"></script>
+		
+		<script>
+	
+		myWebGL = null;
+	
+		function loop() {
+			gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+			m.Visual[0].render(m.myWEBGL.program);
+			for (var i = 1; i < m.Solid.length; i++) {
+					m.Solid[0].render(m.myWEBGL.program);
+					m.Solid[i].rot[1] += .01;
+					m.Solid[i].render(m.myWEBGL.program);
+					
+					switch(i) {
+						case 5:
+							m.Solid[i].loc[1] -= .2;
+					}
+			}
+			requestAnimationFrame(loop);
+		}	
+	
+		class main {
+			constructor() {
+				this.coinCount = 0;
+				this.sec = document.createElement("section");
+				this.secid = "coins";
+				this.sec.innerHTML = "Coins: " + this.coinCount;
+				document.body.appendChild(this.sec);
+				this.Visual = [];
+				this.rotate = -90;
+				this.Visual.push(new Player());
+				this.Solid = [];
+				this.enemy = new Enemy();
+				this.first = new Coins();
+				this.second = new Coins();
+				this.third = new Coins();
+				this.fourth = new Coins();
+				this.bull = new Bullet();
+				this.myWEBGL = new WebGL_Interface();
+			}
+			enemyObject() {
+				m.enemy.loc = [.4,.5,0];
+				m.enemy.rot = [0,0,0];
+				m.Solid.push(m.enemy);
+			}
+			coinObject1() {
+				m.first.loc = [.75,.23,0]
+				m.first.rot = [0,0,0];
+				m.Solid.push(m.first);
+			}
+			
+			coinObject2() {
+				m.second.loc = [-.75,.5,0];
+				m.second.rot = [0,0,0];
+				m.Solid.push(m.second);
+			}
+			
+			coinObject3() {
+				m.third.loc = [.45,-.6,0];
+				m.third.rot = [0,0,0];
+				m.Solid.push(m.third);
+			}
+			
+			coinObject4() {
+				m.fourth.loc = [-.45,.23,0];
+				m.fourth.rot = [0,0,0];
+				m.Solid.push(m.fourth);
+			}
+			
+			UpdateAll() {
+				m.first.Update();
+				m.second.Update();
+				m.third.Update();
+				m.fourth.Update();
+			}
+			
+			KeyDown(event) {
+				if (event.keyCode == 65) {
+					console.log("left");
+					m.Visual[0].rot[2] += .1;
+					m.rotate -= 30;
+				
+				}
+				
+				if (event.keyCode == 87) {
+					m.Visual[0].loc[0] += .01 * Math.cos(m.rotate * Math.PI / 180);
+					m.Visual[0].loc[1] += .01 * Math.sin(m.rotate * Math.PI / 180);
+					console.log(m.rotate);
+				}
+						
+				if (event.keyCode == 68) {
+					console.log("right");
+					m.Visual[0].rot[2] -= .1;
+					m.rotate += 30;
+				}
+					
+				if (event.keyCode == 83) {
+					m.Visual[0].loc[0] -= .01 * Math.cos(m.rotate * Math.PI / 180);
+					m.Visual[0].loc[1] -= .01 * Math.sin(m.rotate * Math.PI / 180);
+				}
+				
+				if (event.keyCode == 32) {
+					console.log("bullet");
+					m.bull.loc = [0,0,0];
+					m.bull.rot = [0,0,0];
+					m.Solid.push(m.bull);
+					
+					m.Solid[5].loc[0] = m.Visual[0].loc[0];
+					m.Solid[5].loc[1] = m.Visual[0].loc[1];
+					
+					m.Solid[5].loc[1] += .2;
+				}
+			}
+		
+			MouseClick(event) {
+				var rect = canvas.getBoundingClientRect();
+				var realX = event.clientX - rect.left;
+				var realY = event.clientY - rect.top;
+				console.log(realX+","+realY);
+				var x = -1 + 2*realX/myCanvas.width;
+				var y = -1 + 2*(myCanvas.height - realY)/myCanvas.height;
+				console.log("The click occurred on "+x+","+y);
+			}
+		
+			static keyD(event) {
+				m.KeyDown(event);
+			}
+		
+			static mouseH(event) {
+				m.MouseClick(event);
+			}
+		
+			static MainLoop() {
+				m.UpdateAll();
+				requestAnimationFrame(main.MainLoop);
+			}
+		}	
+	
+		</script>
+	</head>
+	<body style = "padding: 15px">
+		<canvas id = "myCanvas" width = "640" height = "400" style = "border: 1px solid #000;">
+			Your browser does not support canvas.
+		</canvas>
+		
+		<script>
+			var canvas = document.getElementById("myCanvas");
+			var gl = canvas.getContext("webgl");
+			var m = new main();
+			
+			window.onkeydown = main.keyD;
+			canvas.addEventListener("click", main.mouseH);
+			m.enemyObject();
+			m.coinObject1();
+			m.coinObject2();
+			m.coinObject3();
+			m.coinObject4();
+			requestAnimationFrame(loop);
+			requestAnimationFrame(main.MainLoop);
+		</script>
+	</body>
+</html>

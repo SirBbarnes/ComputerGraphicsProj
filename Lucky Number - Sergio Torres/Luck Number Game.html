@@ -1,0 +1,93 @@
+<html>
+	<head>
+		<script>
+		class main 
+		{
+			constructor() {
+				this.firstNum;
+				this.secondNum;
+				this.myImg = new Image();
+				this.winCount = 0;
+				this.loseCount = 0;
+			}
+			message() {
+				return "First Number: " + this.firstNum + ", " + "Second Number: " + this.secondNum;
+			}
+			
+			playGame() {
+			this.firstNum = Math.floor((Math.random() * 10) + 1)
+			this.secondNum = Math.floor((Math.random() * 10) + 1)
+			if (this.firstNum > this.secondNum) {
+				this.loseCount ++;
+				if (this.loseCount > this.winCount) {
+					document.getElementById("demo1").innerHTML = "You Lose";
+					this.myImg.src = "lose.png";
+					this.myImg.width = "240";
+					this.myImg.height = "240";
+					document.body.appendChild(this.myImg); 
+					document.getElementById("demo").innerHTML = a.message();
+					document.getElementById("demo2").innerHTML = "Overall Losing";
+				}
+				else if (this.winCount > this.loseCount) {
+					document.getElementById("demo1").innerHTML = "You Lose";
+					this.myImg.src = "win.png";
+					this.myImg.width = "240";
+					this.myImg.height = "240";
+					document.body.appendChild(this.myImg);
+					document.getElementById("demo").innerHTML = a.message();
+					document.getElementById("demo2").innerHTML = "Overall Winning";
+				}
+			}
+			
+			else if (this.secondNum > this.firstNum) {
+				this.winCount ++;
+				if (this.loseCount > this.winCount) {
+					document.getElementById("demo1").innerHTML = "You Win";
+					this.myImg.src = "lose.png";
+					this.myImg.width = "240";
+					this.myImg.height = "240";
+					document.body.appendChild(this.myImg); 
+					document.getElementById("demo").innerHTML = a.message();
+					document.getElementById("demo2").innerHTML = "Overall Losing";
+				}
+				else if (this.winCount > this.loseCount) {
+					document.getElementById("demo1").innerHTML = "You Win";
+					this.myImg.src = "win.png";
+					this.myImg.width = "240";
+					this.myImg.height = "240";
+					document.body.appendChild(this.myImg);
+					document.getElementById("demo").innerHTML = a.message();
+					document.getElementById("demo2").innerHTML = "Overall Winning";
+				}
+			}
+			else if (this.winCount == this.loseCount) {
+					document.getElementById("demo1").innerHTML = "Draw";
+					this.myImg.src = "draw.png";
+					this.myImg.width = "240";
+					this.myImg.height = "240";
+					document.body.appendChild(this.myImg);
+					document.getElementById("demo").innerHTML = a.message();
+					document.getElementById("demo2").innerHTML = "Overall Draw";
+				}
+			}
+		}
+		
+		function myFunction() {
+			a.playGame();
+		}
+		</script>
+	</head>
+	
+	<body>
+		<h1>Lucky Number Game</h1>
+		<button onclick="myFunction()">Try your luck</button>
+		<section id = "console"></section>
+		<p id = "demo"></p>
+		<p id = "demo1"></p>
+		<p id = "demo2"></p>
+		<script>
+		a = new main();
+		
+		</script>
+	</body>
+</html>

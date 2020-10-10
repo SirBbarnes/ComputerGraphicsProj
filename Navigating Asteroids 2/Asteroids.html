@@ -1,0 +1,432 @@
+<!DOCTYPE HTML>
+<HTML lang="en">
+	<head>
+	<title>"Modularizing WebGL"</title>
+		
+		<!-- 
+		GLSL is the language used for shaders (GL Shader Language)
+		
+		Attribute - you specify how to pull the data out of the buffers you supply.
+		Buffers - Data loaded onto the GPU (Normally vertex information)
+		
+		Uniforms - global variables (in GLSL) that you set before you run the shader program
+		
+		Textures - Textures are arrays of data you can randomly acces in your shader program.  
+		
+		Varying - are way for a vertex shader to pass data to the fragmentShader.
+		-->
+		<script id="2dVertexShader" type="notjs">
+		attribute vec4 a_position;	
+		//We now want to read in Colors
+		attribute vec3 vert_color;
+		//However, we want to send the color to
+		//The fragment Shader
+		varying vec3 fragColor;
+		
+		//Now we need a uniform.  A uniform is something consistent for all the vertices
+		//in a buffers
+		uniform vec3 transform;
+		uniform vec3 rotation;	
+		//I have added these and initialized them to 0,0,0 in 
+		//webgl_interface
+		uniform vec3 worldLoc;
+		uniform vec3 worldRotation;
+		
+	
+		uniform float n;
+		uniform float f;
+		uniform float r;
+		uniform float t;
+		
+		void main() {
+			//This is a nice trick
+			vec3 c = cos(rotation);
+			vec3 s = sin(rotation);
+			fragColor = vert_color;
+			
+			
+			vec3 cw = cos(worldRotation);
+			vec3 sw = sin(worldRotation);
+			//We need to setup the view martix
+			
+			//We need to setup the projetion matrix
+			
+			//Surprise!  we have to go column firt when we enter the matrix.
+			mat4 translateModel = mat4(1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,transform.x,transform.y,transform.z,1);
+			//mat4 rotateX = mat4();
+			mat4 rotateXModel = mat4 (1.0, 0.0, 0.0, 0.0, 0.0, c.x, -1.0*s.x, 0.0, 0.0, s.x, c.x, 0.0, 0.0, 0.0, 0.0, 1.0);
+			
+			mat4 rotateYModel = mat4 (c.y, 0.0, -1.0*s.y, 0.0, 0.0, 1.0, 0.0, 0.0, s.y, 0.0, c.y, 0.0, 0.0, 0.0, 0.0, 1.0);
+			
+			//mat4 rotateZ = mat4();
+			mat4 rotateZModel = mat4 (c.z, -1.0*s.z, 0.0, 0.0, s.z, c.z, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+			
+			
+			mat4 SimpleOrtho = mat4  (1,0.0,0.0,0.0,
+									 0.0,1,0.0,0.0, 
+									 0.0,0.0,1,0.0, 
+									 0.0,0.0,0.0,1.0);
+			
+
+			
+			
+			mat4 ComplexPerspective = mat4 (
+										n/r, 0.0,0.0,0.0,
+										0.0, n/t,0.0,0.0,
+										0.0,0.0,-1.0*(f+n)/(f-n),-1.0,
+										0.0,0.0,-2.0*f*n/(f-n),0.0
+										);
+			mat4 ComplexOrtho = mat4 (	1.0/r,0.0,0.0,0.0,
+										0.0,1.0/t,0.0,0.0,	//If I make the y -1.0/t I will invert the Y-axis.
+										0.0,0.0,1.0,0.0,
+										0.0,0.0,0.0,1.0	//If I make the x and y translate -1, -1 I can put 0,0 in the bottom right.
+									);
+			/*mat4 perspective = 		mat4(1.0/1.0,0,0,0, 
+										0,1.0/1.0,0,0, 
+										0,0,-1.0*(25.0+1.0)/(25.0-1.0),-1, 
+										0,0,-2.0*25.0*1.0/(25.0-1.0),0);
+			*/
+			mat4 translateView = mat4 (1.0,0.0,0.0,0.0,
+									  0.0,1.0,0.0,0.0,
+									  0.0,0.0,1.0,0.0,
+									  -1.0*worldLoc.x,-1.0*worldLoc.y,worldLoc.z,1.0
+									);
+						
+			mat4 rotateView = mat4 (cw.y,0.0,-1.0*sw.y,0.0,
+									0.0,1.0,0.0,0.0,
+									sw.y,0.0,cw.y,0.0,
+									0.0,0.0,0.0,1.0);
+									
+			vec4 worldSpace = translateModel * rotateXModel * rotateYModel * a_position;
+			vec4 viewSpace = rotateView * translateView * worldSpace;
+			//vec4 viewSpace = lookAt300*worldSpace;
+				mat4 SimplePerspective = mat4 (
+								1.0,0.0,0.0,0.0,
+								0.0,1.0,0.0,0.0,
+								0.0,0.0,1.0,0.0,
+								0.0,0.0,0.0,-1.0*viewSpace.z			
+								);
+			gl_Position = ComplexPerspective*viewSpace;
+		}		
+		</SCRIPT>
+		<script id="2dFragmentShader" type="notjs">
+		//Fragment shaders do not have precision so we have to set it.
+		precision mediump float;
+		varying vec3 fragColor;
+		void main() {
+			//gl_FragColor = vec4(0,0,1,1); //Between 0 and 1.
+			gl_FragColor = vec4(fragColor,1);
+		}
+		</script>
+		
+		<script src="webgl_interface.js"></script>
+		<script src="Shape.js"></script>
+		<script>
+		//HELPER FUNCTION SCRIPTS
+
+			
+			
+
+
+
+			
+		//MAIN CLASS
+		class main {	
+			constructor() {
+				//Need to setup camara locations
+				this.myWEBGL = new WebGL_Interface();
+				this.myShapes = [];
+				
+				this.Solid = [];
+				this.Trigger = [];
+				
+				this.name = "My Class";
+				this.camLoc = [0,0,0];
+				this.camRot = [0,1,0];
+				this.camRad = 0.1;
+				this.name = "cam";
+				this.assCount = 1;
+				
+				this.bulletAvailable = true;
+				
+				while (this.assCount != 200) {
+					var randX = Math.floor(Math.random() * (100 + 100)) - 100;
+					var randY = Math.floor(Math.random() * (100 + 100)) - 100;
+					var randZ = Math.floor(Math.random() * (10 + 10)) - 10;
+							
+					var temp = new Asteroid();
+					temp.loc[0] = randX;
+					temp.loc[1] = randY;
+					temp.loc[2] = randZ;
+					this.myShapes.push(temp);
+					this.assCount++;
+					console.log("Asteroids: " + this.assCount);
+				}	
+			}
+			
+			static loop() {
+				m.UpdateAll();
+				m.RenderAll();
+				gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+				//Do stuff here.
+				for(var i =0; i < m.myShapes.length ; i++) {
+							var rand = Math.random() * (.01 - .05) + .05;
+							m.myShapes[i].rot[0] += rand;
+							m.myShapes[i].rot[1] += rand;
+						    m.myShapes[i].rot[2] += rand;
+							m.myShapes[i].render(m.myWEBGL.program);
+						}
+				requestAnimationFrame(main.loop);
+			} 
+			
+			/*
+			static canvasHandle(event) {
+				var x = -1 + 2*event.clientX/myCanvas.width;
+				var y = -1 + 2*(myCanvas.height - event.clientY)/myCanvas.height;
+				console.log("The click occurred on "+x+","+y);
+				var temp = new Asteroid();
+				temp.loc = [x,y,0];
+				temp.rot = [0,0,0];
+				m.myShapes.push(temp);
+				//temp.render(myWebGL.program);
+			}
+			*/
+			
+			RenderAll()
+			{
+				var i= 0;
+				var len = this.Trigger.length;
+				for(i=0;i<len;i++)
+				{
+					this.Trigger[i].render(this.myWEBGL.program);
+				}
+				len = this.Solid.length;
+				for(i=0;i<len;i++)
+				{
+					this.Solid[i].render(this.myWEBGL.program);
+				}
+			}
+			
+			
+
+			UpdateAll() {
+				var i=0,j=0;
+				var tempLoc = [0,0,0];
+				var tempLoc2 = [0,0,0];
+				var tempRad = 0.0;
+				var len = this.Trigger.length;
+				//var len2 = this.Trigger.length;
+				for(i=0;i<this.Trigger.length;i++)
+				{
+					tempLoc = this.Trigger[i].update();
+					for(j=0;j<this.Trigger.length;j++)
+					{
+						tempLoc2 = this.Trigger[j].update();
+						if(this.isCollision(tempLoc,this.Trigger[i].radius,tempLoc2,this.Trigger[j].radius))
+						{
+							this.EvalMove(this.Trigger[i],this.Trigger[j]);
+						}
+					}
+				}
+				len = this.Trigger.length;
+				for(i=0;i<len;i++)
+				{
+					this.Trigger[i].loc = this.Trigger[i].update();
+				}
+				
+				
+				
+				//len = this.Solid.length;
+				var len2 = this.Trigger.length;
+				var flag = true;
+				var otherLoc = [0.0,0.0,0.0];
+				var otherRad = 0.0;
+				for(j=0;j<this.Solid.length;j++)
+				{
+					otherLoc = this.Solid[j].loc;
+					otherRad = this.Solid[j].radius;
+					for(i=0;i<this.Trigger.length;i++)
+					{
+						tempLoc = this.Trigger[i].update();
+						tempRad = this.Trigger[i].radius;
+						if(this.isCollision(tempLoc,tempRad,otherLoc,otherRad))
+						{
+							this.EvalMove(this.Trigger[i],this.Solid[j]);
+						}
+					}
+				}
+				len = this.Trigger.length;
+				for(i=0;i<len;i++)
+				{
+					this.Trigger[i].loc = this.Trigger[i].update();
+				}
+				len = this.Solid.length;
+				for(i=0;i<len;i++)
+				{
+					this.Solid[i].update();
+				}		
+			}
+			
+			
+			static keyDown(event) {			
+				var tempX = 0;
+				var tempY = 0;
+				var tempZ = 0;
+				
+				if (event.keyCode == 32) {
+					console.log("bullet");
+					if (this.bulletAvailable) {
+						this.createObject(2, bullet,this.Trigger[0].loc,this.Trigger[0].rot,[0.017, 0.017, 0.0]);
+						this.bulletAvailable = false;
+					}
+				}
+				
+				switch(String.fromCharCode(event.keyCode)) {				
+					case "A":
+						m.camRot[1]-=.1;
+						break;
+						
+					case "S":
+						m.camLoc[0]-= Math.sin(m.camRot[1])*.1;
+						m.camLoc[2]-= Math.cos(m.camRot[1])*.1;
+						break;
+						
+					case "D":
+						m.camRot[1]+=.1;
+						break;
+						
+					case "W":
+						m.camLoc[0]+= Math.sin(m.camRot[1])*.1;
+						m.camLoc[2]+= Math.cos(m.camRot[1])*.1;
+						break;
+						
+					case "Z":
+						m.camLoc[1] +=.1;
+						break;
+						
+					case "X":
+						m.camLoc[1] -=.1;
+						break;
+				}
+	
+				var camLock  = gl.getUniformLocation(m.myWEBGL.program,'worldLoc');
+				gl.uniform3fv(camLock,new Float32Array(m.camLoc));
+				var camRotoation  = gl.getUniformLocation(m.myWEBGL.program,'worldRotation');
+				gl.uniform3fv(camRotoation,new Float32Array(m.camRot));
+			}
+			checkForCollision(x,y,z) {
+			
+			//for i in all objects
+			//	testDistance = Distance formula between x,y,z and object(i).x,y and z-index
+			//  if(testDistance < SafeDistance + object(i).collisionRadius)
+			//     return false
+			//	end if
+			return true;
+			}
+			
+
+			isCollision(loc1,rad1,loc2, rad2)
+			{
+				var totalRad = rad1+rad2;
+				var dist = Math.sqrt( (loc2[0]-loc1[0])*(loc2[0]-loc1[0]) +
+				(loc2[1]-loc1[1])*(loc2[1]-loc1[1]));
+				return dist <= totalRad;
+			}	
+			
+
+
+			EvalMove(obj1,obj2)
+			{
+				var name1 = obj1.name;
+				var name2 = obj2.name;
+				
+				if(name1 == "asteroid" && name2 == " cam" || name1 == "cam" && name2 == "asteroid") //works
+				{
+					this.isLose = true;
+					return;
+				}
+				
+				if(name1 == "bullet" && name2 == "asteroid" || name2 == "bullet" && name1 == "asteroid") //works
+				{
+					this.DestroyObject(obj1.id);
+					this.DestroyObject(obj2.id);
+					this.bulletAvailable = true;
+					return;
+				}
+				return;
+			}
+			
+			
+			
+			
+			CreateObject(type, prefab, loc, rot,velocity)
+			{
+				//0 visual
+				//1 solid
+				//2 trigger
+				var temp = new prefab;
+				this.objectCounter++;
+				temp.id = "ID"+this.objectCounter;
+				temp.prefab = prefab;
+				temp.loc = loc;
+				temp.rot = rot;
+				temp.velocity = velocity;
+				switch(type)
+				{
+					case 0: this.Solid.push(temp);
+						break;
+					case 1: this.Trigger.push(temp);
+						break;
+					default:
+						break;
+				}
+			}
+
+
+			DestroyObject(id) {
+				var i;
+				for(i=0;i<this.Solid.length;i++)
+				{
+					if(this.Solid[i].id == id)
+					{
+						this.Solid.splice(i,1);
+						return;
+					}
+				}
+				for(i=0;i<this.Trigger.length;i++)
+				{
+					if(this.Trigger[i].id == id)
+					{
+						this.Trigger.splice(i,1);
+						return;
+					}
+				}
+			}
+		}		
+		</script>
+
+	</head>
+	<body>
+		<HEADER>
+		
+		</HEADER>
+		
+		<CANVAS id="myCanvas" width="640" height="400">
+			Your browser does not support canvas.
+		</CANVAS>
+		
+		<FOOTER>
+		
+		</FOOTER>
+		<SCRIPT>
+			var canvas = document.getElementById("myCanvas");
+			var gl = canvas.getContext("webgl");	
+			var m = new main();
+			requestAnimationFrame(main.loop);
+			window.onkeydown = main.keyDown;
+			//canvas.addEventListener("click",main.canvasHandle);			
+		</SCRIPT>
+		
+	</body>
+	
+</HTML>
